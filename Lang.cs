@@ -5,6 +5,7 @@ namespace ShopPlugin
     class Lang
     {
         private static string _buyCommand = "buy";
+        private static string _listItemCommand = "list";
         private static string _buyItemPermission = "shop.buy";
         private static string _sellCommand = "sell";
         private static string _sellItemPermission = "shop.sell";
@@ -17,22 +18,23 @@ namespace ShopPlugin
         private static Dictionary<string, string> _message = new Dictionary<string, string>
         {
             {"Load", "[Shop] Loaded {0} items in shop"},
-            {"NoPerms", "[Shop] Вы не можете использовать эту команду."},
-            {"BuyInfo", "[Shop] /{0} {1} (Id предмета) [Кол-во]"},
-            {"SellInfo", "[Shop] /{0} {1}"},
-            {"SearchInfo", "[Shop] /{0} {1} (Id предмета)"},
-            {"NoSlot", "[Shop] В вашем рюкзаке нет места!" },
-            {"TooMany", "[Shop] У нас есть только {0} {1}"},
-            {"OnBuy", "[Shop] Вы купили {0} {1} за {2}"},
-            {"OnSell", "[Shop] Вы продали {0} {1} за {2}"},
-            {"EmptyHand", "[Shop] Возьмите предмет в руку, затем напишите /{0} {1}"},
-            {"WrongSellItem", "[Shop] Мы не покупаем данный предмет" },
-            {"Error", "[Shop] Что-то пошло не так!" },
-            {"NoMatch", "[Shop] У нас нет такого в ассортименте!" },
-            {"SearchItem", "[Shop] {0} | Цена продажи: {1} | Цена покупки: {2} | Кол-во на складе: {3}" },
-            {"NotInShop", "[Shop] Чтобы пользоваться магазином вы должны находится на территории прилавка." },
-            {"ShopCommands", "[Shop] Комманды магазина:" },
-            {"NoMoney", "У вас недостаточно виты! Нужно {0}"}
+            {"NoPerms", "[Shop] You cannot use this command."},
+            {"BuyInfo", "[Shop] /{0} {1} (Item index/name) [Quantity] - buy an item depending on its index / name"},
+            {"SellInfo", "[Shop] /{0} {1} - sell whats in your selected slot in the hotbar."},
+            {"ListItems", "[Shop] /{0} {1} - list items presently in the shop."},
+            {"SearchInfo", "[Shop] /{0} {1} (Item ID/name) - searches if an item is in the shop and gives you its prices / index."},
+            {"NoSlot", "[Shop] There is no room in your inventory!" },
+            {"TooMany", "[Shop] We only have [c/{0}:{1}] [i:{2}]."},
+            {"OnBuy", "[Shop] [c/{0}:Purchase was successfull!] You bought [c/{1}:{2}] [i/p{3}:{4}] for {5}, you have {6} left in your bank."},
+            {"OnSell", "[Shop] [c/{0}:Sale was successfull!] You sold [c/{1}:{2}] [i/p{3}:{4}] for {5}, you now have {6} in your bank."},
+            {"EmptyHand", "[Shop] Select an item in your hotbar, then type /{0} {1}"},
+            {"WrongSellItem", "[Shop] We can't buy this item" },
+            {"Error", "[Shop] Something went wrong!" },
+            {"NoMatch", "[Shop] We don't have that in stock!" },
+            {"SearchItem", "[Shop] - {0} [{1}] - [c/{2}:{3}]([c/{4}:{5}]) [c/{6}:B:] {7} {8}" },
+            {"NotInShop", "[Shop] To use the shop, you must be in the area of ​​the counter." },
+            {"ShopCommands", "[Shop] Shop Commands:" },
+            {"NoMoney", "You don't have enough money! You need: {0}"}
         };
 
         public static Config DefaultConfig()
@@ -41,6 +43,7 @@ namespace ShopPlugin
             {
                 BuyCommand = _buyCommand,
                 BuyItemPermission = _buyItemPermission,
+                ListShopItemsCommand = _listItemCommand,
                 SellCommand = _sellCommand,
                 SellItemPermission = _sellItemPermission,
                 ShopCommand = _shopCommand,
@@ -60,16 +63,18 @@ namespace ShopPlugin
                         Name = Terraria.Lang.GetItemNameValue(19),
                         Infinity = false,
                         Amount = 500,
+
                         SelPrice = "1000",
                         BuyPrice = "2000"
                     },
                     new ItemInfo
                     {
-                        Id = 20,
-                        Name = Terraria.Lang.GetItemNameValue(20),
+                        Id = 46,
+                        Name = Terraria.Lang.GetItemNameValue(46),
+                        modifierId = 40,
                         Infinity = false,
                         Amount = 500,
-                        SelPrice = "500",
+                        SelPrice = "0",
                         BuyPrice = "1000"
                     },
                     new ItemInfo

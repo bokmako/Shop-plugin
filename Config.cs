@@ -8,6 +8,7 @@ namespace ShopPlugin
         public string Name = "";
         public bool Infinity = false;
         public int Amount = 0;
+        public byte modifierId = 0;
 
         /// <summary>Цена купли у игрока</summary>
         public string SelPrice = "0";
@@ -18,6 +19,7 @@ namespace ShopPlugin
     public class Config
     {
         public string BuyCommand = "";
+        public string ListShopItemsCommand = "";
         public string BuyItemPermission = "";
         public string SellCommand = "";
         public string SellItemPermission = "";
