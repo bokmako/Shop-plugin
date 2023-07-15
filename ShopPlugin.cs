@@ -142,7 +142,7 @@ namespace ShopPlugin
             {
                 if (args.Player.HasPermission(config.BuyItemPermission))
                 {
-                    if (args.Parameters.Count != 3)
+                    if (args.Parameters.Count > 3)
                     {
                         args.Player.SendInfoMessage(config.Messages["BuyInfo"], config.ShopCommand, config.BuyCommand);
                     }
@@ -270,7 +270,7 @@ namespace ShopPlugin
                 }
                 if (args.Parameters.Count == 2)
                 {
-                    itemName = args.Parameters[2];
+                    itemName = args.Parameters[1];
                     if (int.TryParse(args.Parameters[1], out IdItem) && IdItem < 1 || IdItem > Terraria.ID.ItemID.Count - 1)
                     {
                         args.Player.SendInfoMessage(config.Messages["SearchInfo"], config.ShopCommand, config.SearchCommand);
@@ -338,7 +338,7 @@ namespace ShopPlugin
             }
             if (Bank.Balance < itemCost)
             {
-                pPlayer.SendInfoMessage(config.Messages["NoMoney"], _itemCost);
+                pPlayer.SendInfoMessage(config.Messages["NoMoney"], (((Money)_itemCost) - Bank.Balance).ToString());
                 return false;
             }
             if(!pItem.Infinity)
@@ -435,8 +435,8 @@ namespace ShopPlugin
             SEconomyPlugin.Instance.WorldAccount.TransferTo(Bank, itemCost, Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToReceiver,
                                                             "Sell item", string.Format("[Shop] Sold {0} {1} for {2} money",
                                                                                         amount, Terraria.Lang.GetItemNameValue(vItem.Id), _totalCost));
-            player.SendInfoMessage(config.Messages["OnSell"], Color.Green.Hex3(), Color.Magenta.Hex3(), amount, vItem.modifierId, vItem.Id, _totalCost, Bank.Balance.ToString());
-            TShock.Log.Write(string.Format("{0} sold {1} for {2}", args.Player.Name, vItem.Name, ((Money)_totalCost).ToString()), System.Diagnostics.TraceLevel.Info);
+            player.SendInfoMessage(config.Messages["OnSell"], Color.Green.Hex3(), Color.Magenta.Hex3(), amount, vItem.modifierId, vItem.Id, ((Money)_totalCost).ToString(), Bank.Balance.ToString());
+            TShock.Log.Write(string.Format("{0} sold {1} for {2}", args.Player.Name, vItem.Name, _totalCost.ToString()), System.Diagnostics.TraceLevel.Info);
 
             if (!isSSC)
             {

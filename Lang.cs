@@ -19,10 +19,10 @@ namespace ShopPlugin
         {
             {"Load", "[Shop] Loaded {0} items in shop"},
             {"NoPerms", "[Shop] You cannot use this command."},
-            {"BuyInfo", "[Shop] /{0} {1} (Item index/name) [Quantity] - buy an item depending on its index / name"},
+            {"BuyInfo", "[Shop] /{0} {1} (Item index/name) [Quantity] - buy an item depending on its index/name"},
             {"SellInfo", "[Shop] /{0} {1} - sell whats in your selected slot in the hotbar."},
             {"ListItems", "[Shop] /{0} {1} - list items presently in the shop."},
-            {"SearchInfo", "[Shop] /{0} {1} (Item ID/name) - searches if an item is in the shop and gives you its prices / index."},
+            {"SearchInfo", "[Shop] /{0} {1} Optional:(Item ID/name) - searches if an item from either its id/name or from what you have selected in your hotbar is in the shop and gives you its prices/index."},
             {"NoSlot", "[Shop] There is no room in your inventory!" },
             {"TooMany", "[Shop] We only have [c/{0}:{1}] [i:{2}]."},
             {"OnBuy", "[Shop] [c/{0}:Purchase was successfull!] You bought [c/{1}:{2}] [i/p{3}:{4}] for {5}, you have {6} left in your bank."},
@@ -32,9 +32,9 @@ namespace ShopPlugin
             {"Error", "[Shop] Something went wrong!" },
             {"NoMatch", "[Shop] We don't have that in stock!" },
             {"SearchItem", "[Shop] - {0} [{1}] - [c/{2}:{3}]([c/{4}:{5}]) [c/{6}:B:] {7} {8}" },
-            {"NotInShop", "[Shop] To use the shop, you must be in the area of ​​the counter." },
+            {"NotInShop", "[Shop] You must be in the area of the counter to use the shop." },
             {"ShopCommands", "[Shop] Shop Commands:" },
-            {"NoMoney", "You don't have enough money! You need: {0}"}
+            {"NoMoney", "You don't have enough money! You are missing: {0}"}
         };
 
         public static Config DefaultConfig()
