@@ -19,7 +19,7 @@ Shop plugin to sell/buy items from a global shop with SEconomy.
 ### Commands and Usage
 - `shop` - base commands, gives you a list a commands if in the shop region.
 - `shop list` - list items presently in the shop in an index, this command can be used anywhere in the world.
-- `shop buy (Item index/name) [Quantity]` - (Item index/name) [Quantity] - buy an item depending on its index/name.
+- `shop buy (Item index/name) [Quantity]` - buy an item depending on its index/name.
 - `shop sell` - sell whats in your selected slot in the hotbar(If you give a group this permission, it is recommended that the world has SSC on).
 - `shop search Optional:(Item ID/name)`  - searches if an item from either its id/name or from what you have selected in your hotbar is in the shop and gives you its prices/index.
 
