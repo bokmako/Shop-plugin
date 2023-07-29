@@ -7,6 +7,7 @@ using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
 using Wolfje.Plugins.SEconomy;
+using Color = Microsoft.Xna.Framework.Color;
 
 namespace ShopPlugin
 {
@@ -19,9 +20,9 @@ namespace ShopPlugin
         {
         }
         private Config config;
-        public override string Author => "Bokmako";
+        public override string Author => "Bokmako|Maxthegreat99";
         public override string Name => "ShopPlugin";
-        public override Version Version => new Version(0, 0, 0, 1);
+        public override Version Version => new Version(0, 1, 0, 0);
         public override string Description => "A shop plugin.";
 
         public override void Initialize()
@@ -43,7 +44,7 @@ namespace ShopPlugin
                 Lot++;
             }
             Console.WriteLine(config.Messages["Load"], Lot);
-            Commands.ChatCommands.Add(new Command(config.BuyItemPermission, Shop,
+            Commands.ChatCommands.Add(new Command( Shop,
                 !config.ShopCommand.Contains(" ")
                 ? config.ShopCommand
                 : throw new ArgumentException("Command contains space")));
@@ -67,16 +68,17 @@ namespace ShopPlugin
                 return false;
             foreach(var reg in rg)
             {
-                if (reg == "Shop")
+                if (reg == config.ShopRegionName)
                     return true;
             }
             return false;
         }
         private void Shop(CommandArgs args)
         {
-            if (!IsInShop(args))
+            string cmd = "";
+            if (!SEconomyPlugin.Instance.GetBankAccount(args.Player).IsAccountEnabled)
             {
-                args.Player.SendInfoMessage(config.Messages["NotInShop"]);
+                args.Player.SendErrorMessage("[Shop] Error: Your bank account is not enabled! you cannot access the shop.");
                 return;
             }
             if (!args.Player.HasPermission(config.ShopPermission))
@@ -84,50 +86,107 @@ namespace ShopPlugin
                 args.Player.SendInfoMessage(config.Messages["NoPerms"]);
                 return;
             }
+            if(args.Parameters.Count > 0)
+                cmd = args.Parameters[0].ToLower();
+
+            #region list senario
+            if (!cmd.Equals("") && cmd.Equals(config.ListShopItemsCommand))
+            {
+                args.Player.SendMessage("[Shop] List of items present in the global shop:", Microsoft.Xna.Framework.Color.Green);
+                int i = 0;
+                foreach (ItemInfo item in config.Items)
+                {
+                    i++;
+                    Item tItem = TShock.Utils.GetItemById(item.Id);
+                    tItem.Prefix(item.modifierId);
+                    Money buyingPriceToShow;
+                    Money.TryParse(item.BuyPrice, out buyingPriceToShow);
+                    Money sellingPriceToShow;
+                    Money.TryParse(item.SelPrice, out sellingPriceToShow);
+                    string itemShown = string.Format((item.modifierId != 0) ? "[i/p{0}:{1}]" : "[i:{1}]", tItem.prefix, item.Id);
+                    args.Player.SendInfoMessage("- {0} [{1}] - [c/{2}:{3}]([c/{4}:{5}]) [c/{6}:B:] {7} {8}", i, itemShown,
+                                                Microsoft.Xna.Framework.Color.Gold.Hex3(), tItem.HoverName,
+                                                (item.Infinity || item.Amount != 0) ? Microsoft.Xna.Framework.Color.Green.Hex3() : Microsoft.Xna.Framework.Color.Red.Hex3(),
+                                                item.Infinity ? "+" : item.Amount.ToString(),
+                                                Microsoft.Xna.Framework.Color.Magenta.Hex3(),
+                                                buyingPriceToShow.ToString(),
+                                                (sellingPriceToShow.Value < 0) ? "" : string.Format("[c/{0}:S:] {1}",
+                                                                                       Microsoft.Xna.Framework.Color.Magenta.Hex3(),
+                                                                                       sellingPriceToShow.ToString()));
+                }
+                args.Player.SendInfoMessage("You have: {0}",SEconomyPlugin.Instance.GetBankAccount(args.Player).Balance.ToString());
+                if (!IsInShop(args))
+                    args.Player.SendErrorMessage("[Shop] You have to be in the shop to buy items!");
+
+                return;
+            }
+            #endregion
+            if (!IsInShop(args))
+            {
+                args.Player.SendInfoMessage(config.Messages["NotInShop"]);
+                return;
+            }
+
             if (args.Parameters.Count == 0)
             {
                 args.Player.SendInfoMessage(config.Messages["ShopCommands"]);
+                args.Player.SendInfoMessage(config.Messages["ListItems"], config.ShopCommand, config.ListShopItemsCommand);
                 args.Player.SendInfoMessage(config.Messages["BuyInfo"], config.ShopCommand, config.BuyCommand);
                 args.Player.SendInfoMessage(config.Messages["SellInfo"], config.ShopCommand, config.SellCommand);
                 args.Player.SendInfoMessage(config.Messages["SearchInfo"], config.ShopCommand, config.SearchCommand);
                 return;
             }
-            string cmd = args.Parameters[0].ToLower();
+
             #region Buy scenario
             if (cmd == config.BuyCommand)
             {
                 if (args.Player.HasPermission(config.BuyItemPermission))
                 {
-                    if (args.Parameters.Count != 3)
+                    if (args.Parameters.Count > 3)
                     {
                         args.Player.SendInfoMessage(config.Messages["BuyInfo"], config.ShopCommand, config.BuyCommand);
                     }
                     if (args.Parameters.Count == 3 || args.Parameters.Count == 2)
                     {
-                        int id;
+                        int index = 0;
+                        string name;
+
                         int amount = 1;
-                        if (!int.TryParse(args.Parameters[1], out id))
+                        if (int.TryParse(args.Parameters[1], out index) && ( index < 1 || index > config.Items.Count ) )
                         {
-                            args.Player.SendErrorMessage("Error: Invalid Id entered!");
+                            args.Player.SendErrorMessage("[Shop] Error: Invalid index entered!");
                             return;
+                        }
+                        else
+                        {
+                            name = args.Parameters[1];
+                            if(TShock.Utils.GetItemByIdOrName(name) == null)
+                            {
+                                args.Player.SendErrorMessage("[Shop] Error: Invalid item name entered!");
+                                return;
+                            }
                         }
                         if (args.Parameters.Count == 3)
                         {
-                            if (!int.TryParse(args.Parameters[2], out amount))
+                            if (!int.TryParse(args.Parameters[2], out amount) || amount < 1)
                             {
-                                args.Player.SendErrorMessage("Error: Invalid amount entered!");
+                                args.Player.SendErrorMessage("[Shop] Error: Invalid amount entered!");
                                 return;
                             }
                         }
                         int ItemNumber = 0;
                         ItemInfo Item = null;
+                        int maxStack = 0;
                         ReadConfig(filepath, Lang.DefaultConfig(), out config);
                         for (int i = 0; i <= config.Items.Count - 1; i++)
                         {
-                            if (config.Items[i].Id == id)
+                            Item tItem = TShock.Utils.GetItemByName(config.Items[i].Name)[0];
+                            tItem.prefix = config.Items[i].modifierId;
+                            if (i == index - 1 || tItem.HoverName.StartsWith(name) || tItem.Name.StartsWith(name) )
                             {
                                 Item = config.Items[i];
                                 ItemNumber = i;
+                                maxStack = tItem.maxStack;
                                 break;
                             }
                         }
@@ -141,13 +200,24 @@ namespace ShopPlugin
                             args.Player.SendInfoMessage(config.Messages["TooMany"], Item.Amount, Terraria.Lang.GetItemNameValue(Item.Id));
                             return;
                         }
-                        if (!args.Player.InventorySlotAvailable)
+                        int slotsAvailable = 0;
+                        //gets how many empty slots player has
+                        for(int i = 0; i < NetItem.InventorySlots; i++)
+                        {
+                            if (args.TPlayer.inventory[i] == null || !args.TPlayer.inventory[i].active || args.TPlayer.inventory[i].Name == "")
+                            {
+                                slotsAvailable++;
+                            }
+                        }
+                        if (!args.Player.InventorySlotAvailable || slotsAvailable < (int) Math.Ceiling((double)amount / maxStack) )
                         {
                             args.Player.SendInfoMessage(config.Messages["NoSlot"]);
+                            return;
                         }
                         if (args.Player.InventorySlotAvailable)
                         {
                             TryToBuy(args.Player, Item, amount, ItemNumber);
+                            return;
                         }
                     }
                 }
@@ -163,6 +233,7 @@ namespace ShopPlugin
                 }
 
                 TryToSell(args);
+                return;
             }
             #endregion
             #region Search scenario
@@ -182,9 +253,12 @@ namespace ShopPlugin
                 ItemInfo vItem = new ItemInfo();
                 bool vFound = false;
                 int IdItem = 0;
+                int itemIndex = 0;
+                Item tItem = new Item();
+                string itemName = "null";
                 if (args.Parameters.Count == 1)
                 {
-                    if (args.Player.SelectedItem.netID == 0)
+                    if (args.Player.SelectedItem.netID == 0 || TShock.Utils.GetItemById(args.Player.SelectedItem.netID) == null)
                     {
                         args.Player.SendInfoMessage(config.Messages["SearchInfo"], config.ShopCommand, config.SearchCommand);
                         return;
@@ -196,20 +270,33 @@ namespace ShopPlugin
                 }
                 if (args.Parameters.Count == 2)
                 {
-                    if (!int.TryParse(args.Parameters[1], out int _idItem))
+                    itemName = args.Parameters[1];
+                    if (int.TryParse(args.Parameters[1], out IdItem) && IdItem < 1 || IdItem > Terraria.ID.ItemID.Count - 1)
                     {
                         args.Player.SendInfoMessage(config.Messages["SearchInfo"], config.ShopCommand, config.SearchCommand);
                         return;
                     }
-                    IdItem = _idItem;
+                    else
+                    {
+
+                        if (TShock.Utils.GetItemByName(itemName) == null)
+                        {
+                            args.Player.SendInfoMessage(config.Messages["SearchInfo"], config.ShopCommand, config.SearchCommand);
+                            return;
+                        }
+                    }
                 }
                 ReadConfig(filepath, Lang.DefaultConfig(), out config);
                 for (int i = 0; i < config.Items.Count; i++)
                 {
-                    if (IdItem == config.Items[i].Id)
+                    Item _tItem = TShock.Utils.GetItemByName(config.Items[i].Name)[0];
+                    _tItem.prefix = config.Items[i].modifierId;
+                    if (IdItem == config.Items[i].Id || config.Items[i].Name.StartsWith(itemName) || _tItem.HoverName.StartsWith(itemName) )
                     {
                         vFound = true;
                         vItem = config.Items[i];
+                        tItem = _tItem;
+                        itemIndex = i + 1;
                         break;
                     }
                 }
@@ -220,37 +307,67 @@ namespace ShopPlugin
                 }
                 Money.TryParse(vItem.SelPrice, out var _sellPrice);
                 Money.TryParse(vItem.BuyPrice, out var _buyPrice);
-                args.Player.SendInfoMessage(config.Messages["SearchItem"], Terraria.Lang.GetItemNameValue(vItem.Id), _sellPrice.ToString(), _buyPrice.ToString(), vItem.Amount);
-
+                string itemShown = string.Format((vItem.modifierId != 0) ? "[i/p{0}:{1}]" : "[i:{1}]", tItem.prefix, tItem.netID);
+                args.Player.SendInfoMessage(config.Messages["SearchItem"], itemIndex, itemShown,
+                                                Microsoft.Xna.Framework.Color.Gold.Hex3(), tItem.HoverName,
+                                                (vItem.Infinity || vItem.Amount != 0) ? Microsoft.Xna.Framework.Color.Green.Hex3() : Microsoft.Xna.Framework.Color.Red.Hex3(),
+                                                vItem.Infinity ? "+" : vItem.Amount.ToString(),
+                                                Microsoft.Xna.Framework.Color.Magenta.Hex3(),
+                                                _buyPrice.ToString(),
+                                                (_sellPrice.Value < 0) ? "" : string.Format("[c/{0}:S:] {1}",
+                                                                                       Microsoft.Xna.Framework.Color.Magenta.Hex3(),
+                                                                                       _sellPrice.ToString()));
+                return;
             }
-
+            #endregion
+            args.Player.SendErrorMessage("Error: Invalid command, please do {0}{1} to see the list of commands!", TShock.Config.Settings.CommandSpecifier, config.ShopCommand);
         }
-        #endregion
+       
         private bool TryToBuy(TSPlayer pPlayer, ItemInfo pItem, int pStack, int pNumber)
         {
             var Bank = SEconomyPlugin.Instance.GetBankAccount(pPlayer);
             if(Int32.TryParse(pItem.BuyPrice, out var x) && x < 0)
             {
-                pPlayer.SendInfoMessage("[Shop] Мы не продаем {0}. Только покупаем!", pItem.Name);
+                pPlayer.SendInfoMessage("[Shop] We don't sell {0}. We only buy!", pItem.Name);
                 return false;
             }
             int _itemCost = Convert.ToInt32(pItem.BuyPrice) * pStack;
-            if (Bank == null || Bank.IsAccountEnabled == false || !Money.TryParse(Convert.ToString(_itemCost), out var itemCost))
+            if (Bank == null || Bank.IsAccountEnabled == false  || !Money.TryParse(Convert.ToString(_itemCost), out var itemCost))
             {
                 return false;
             }
             if (Bank.Balance < itemCost)
             {
-                pPlayer.SendInfoMessage(config.Messages["NoMoney"], _itemCost);
+                pPlayer.SendInfoMessage(config.Messages["NoMoney"], (((Money)_itemCost) - Bank.Balance).ToString());
                 return false;
             }
             if(!pItem.Infinity)
                 ShopManager(pStack, pNumber, true);
+
             Bank.TransferTo(SEconomyPlugin.Instance.WorldAccount, itemCost, Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToSender | Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.IsPayment,
                                         "Purchase", string.Format("For buying {0} {1}", pStack, Terraria.Lang.GetItemNameValue(pItem.Id)));
-            OnBuySell(pPlayer, pStack, Terraria.Lang.GetItemNameValue(pItem.Id), itemCost.ToString(), true);
-            TShock.Log.Write(string.Format("{0} купил(а) {1} за {2}", pPlayer.Name, pItem.Name, _itemCost.ToString()), System.Diagnostics.TraceLevel.Info);
-            pPlayer.GiveItem(pItem.Id, pStack);
+
+            pPlayer.SendInfoMessage(config.Messages["OnBuy"],
+                                    Color.Green.Hex3(), Color.Magenta.Hex3(), pStack, pItem.modifierId, pItem.Id, itemCost.ToString(), Bank.Balance.ToString());
+
+            
+
+            TShock.Log.Write(string.Format("{0} bought {1} for {2}", pPlayer.Name, pItem.Name, _itemCost.ToString()), System.Diagnostics.TraceLevel.Info);
+
+            Item tItem = TShock.Utils.GetItemById(pItem.Id);
+
+            double _slotsToFill = pStack / tItem.maxStack;
+            int slotsToFill = (int)Math.Ceiling(_slotsToFill);
+            if (pStack < tItem.maxStack)
+                slotsToFill = 1;
+            for(int i = 0; i < slotsToFill; i++)
+            {
+                int amountToFill = tItem.maxStack;
+                if (i == slotsToFill - 1)
+                    amountToFill = pStack - ((slotsToFill - 1) * tItem.maxStack);
+                pPlayer.GiveItem(pItem.Id, amountToFill, pItem.modifierId);
+            }
+
             return true;
         }
         private bool TryToSell(CommandArgs args)
@@ -279,9 +396,9 @@ namespace ShopPlugin
                 args.Player.SendInfoMessage(string.Format(config.Messages["WrongSellItem"], config.ShopCommand, config.SellCommand));
                 return false;
             }
-            if (Int32.TryParse(vItem.SelPrice, out var x) && x < 0)
+            if (Int32.TryParse(vItem.SelPrice, out var x) && x < 1)
             {
-                args.Player.SendInfoMessage("[Shop] Мы не покупаем {0}. Только продаем!", vItem.Name);
+                args.Player.SendInfoMessage("[Shop] We don't buy {0}. We only sell!", vItem.Name);
                 return false;
             }
 
@@ -294,15 +411,40 @@ namespace ShopPlugin
                 args.Player.SendErrorMessage(config.Messages["Error"]);
                 return false;
             }
-            int InvItem = Array.IndexOf(args.Player.TPlayer.inventory, args.Player.SelectedItem);
-            args.Player.TPlayer.inventory[InvItem].SetDefaults(0);
-            NetMessage.SendData((int)PacketTypes.PlayerSlot, -1, -1, null, args.Player.Index, InvItem);
+
+            TSPlayer player = new TSPlayer(args.Player.Index);
+
+            bool isSSC = Main.ServerSideCharacter;
+
+            if (!isSSC)
+            {
+                Main.ServerSideCharacter = true;
+                NetMessage.SendData(7, player.Index, -1, null, 0, 0.0f, 0.0f, 0.0f, 0, 0, 0);
+                player.IgnoreSSCPackets = true;
+            }
+
+
+            int InvItem = Array.IndexOf(player.TPlayer.inventory, player.SelectedItem);
+
+            (player.TPlayer.inventory[InvItem]).netDefaults(0);
+
+            NetMessage.SendData((int)PacketTypes.PlayerSlot, -1, -1, null, player.Index, InvItem, 0, 0, 0, 0, 0);
+
             ShopManager(amount, Number, false);
+
             SEconomyPlugin.Instance.WorldAccount.TransferTo(Bank, itemCost, Wolfje.Plugins.SEconomy.Journal.BankAccountTransferOptions.AnnounceToReceiver,
                                                             "Sell item", string.Format("[Shop] Sold {0} {1} for {2} money",
                                                                                         amount, Terraria.Lang.GetItemNameValue(vItem.Id), _totalCost));
-            OnBuySell(args.Player, amount, Terraria.Lang.GetItemNameValue(vItem.Id), itemCost.ToString(), false);
-            TShock.Log.Write(string.Format("{0} продал(а) {1} за {2}", args.Player.Name, vItem.Name, _totalCost.ToString()), System.Diagnostics.TraceLevel.Info);
+            player.SendInfoMessage(config.Messages["OnSell"], Color.Green.Hex3(), Color.Magenta.Hex3(), amount, vItem.modifierId, vItem.Id, ((Money)_totalCost).ToString(), Bank.Balance.ToString());
+            TShock.Log.Write(string.Format("{0} sold {1} for {2}", args.Player.Name, vItem.Name, _totalCost.ToString()), System.Diagnostics.TraceLevel.Info);
+
+            if (!isSSC)
+            {
+                Main.ServerSideCharacter = false;
+                NetMessage.SendData(7, player.Index, -1, null, 0, 0.0f, 0.0f, 0.0f, 0, 0, 0);
+                player.IgnoreSSCPackets = false;
+            }
+
             return true;
         }
         public void ShopManager(int pStack, int pNumber, bool isBuy)

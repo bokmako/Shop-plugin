@@ -1,0 +1,13 @@
+C:\Users\mcjac\Shop-plugin\bin\x64\Release\net6.0\HttpServer.dll
+C:\Users\mcjac\Shop-plugin\bin\x64\Release\net6.0\Shop.deps.json
+C:\Users\mcjac\Shop-plugin\bin\x64\Release\net6.0\Shop.dll
+C:\Users\mcjac\Shop-plugin\bin\x64\Release\net6.0\Shop.pdb
+C:\Users\mcjac\Shop-plugin\bin\x64\Release\net6.0\Wolfje.Plugins.SEconomy.dll
+C:\Users\mcjac\Shop-plugin\obj\x64\Release\net6.0\Shop.csproj.AssemblyReference.cache
+C:\Users\mcjac\Shop-plugin\obj\x64\Release\net6.0\Shop.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\mcjac\Shop-plugin\obj\x64\Release\net6.0\Shop.csproj.CoreCompileInputs.cache
+C:\Users\mcjac\Shop-plugin\obj\x64\Release\net6.0\Shop.csproj.CopyComplete
+C:\Users\mcjac\Shop-plugin\obj\x64\Release\net6.0\Shop.dll
+C:\Users\mcjac\Shop-plugin\obj\x64\Release\net6.0\refint\Shop.dll
+C:\Users\mcjac\Shop-plugin\obj\x64\Release\net6.0\Shop.pdb
+C:\Users\mcjac\Shop-plugin\obj\x64\Release\net6.0\ref\Shop.dll
